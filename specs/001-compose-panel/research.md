@@ -16,7 +16,7 @@ Fuentes: https://plugins.omarchy.org/develop.html, `/usr/share/omarchy/shell`, p
 | Procesos con `Process` acotado, nunca interpolar valores en `bash -c` (fuente de datos: ver Fase 0). | Sin dependencias extra; seguro. |
 | Referencia Shibumi validada: `io.github.iammhador.claude-pulse` (solo `bar-widget`, datos dentro del widget, `WidgetButton.onPressed`, `PlainText` en todo). Su color no sigue a Shibumi (usa `barForeground`); ver regla de color. | Click y datos funcionan en la barra Shibumi del usuario. |
 | About en ajustes: tarjeta con nombre · versión, nota de privacidad y enlace al repo (`Qt.openUrlExternally`); `"homepage"` en `manifest.json`. | Patrón de `rimuru.screentime` (`SettingsView.qml`, sección About). |
-| ID `io.github.jeanpidev.omarchy-compose`; repo `github.com/JeanpiDev/omarchy-compose`. | Third-party no puede usar `omarchy.*`; sin symlinks. |
+| ID `io.github.jeanpidev.omapose`; repo `github.com/JeanpiDev/omapose`. | Third-party no puede usar `omarchy.*`; sin symlinks. |
 | Validación: `omarchy plugin validate`, `qmllint -I "$OMARCHY_PATH/shell"`; probar click, Esc, summon/hide, disable/enable, restart, remove en Shibumi y barra nativa. | Checklist de la guía. |
 
 ## Fase 0 (plan): decisiones con alternativas
@@ -38,3 +38,5 @@ Fuentes: https://plugins.omarchy.org/develop.html, `/usr/share/omarchy/shell`, p
 | Etiqueta del id de traducciones distinta de la propiedad (`tr`, no `strings`). | `strings: strings` dentro de un componente se resuelve a sí mismo (binding vacío): se veían claves sin traducir. | — |
 | `IpcHandler` en `PluginIpc.qml`, instanciado por `BarWidget`. | `qmllint` (Quattro) termina con código 255 sin mensaje ante cualquier `IpcHandler` con funciones tipadas (también en omaports y rimuru); separado, el paso de la guía `qmllint BarWidget.qml Panel.qml` pasa. Abrir/cerrar los enruta el shell a `BarWidget.open()/close()`. | Dejarlo en `BarWidget.qml` (falla la validación de la guía). |
 | Tab / Shift+Tab → panel vecino (`switchPanel`); `/` enfoca el buscador; ↓ desde el buscador entra a la lista. | Convención de todos los paneles nativos y del ejemplo de `develop.html`. | Tab para alternar buscador/lista. |
+| RAM total con `docker stats --no-stream` sobre los contenedores en marcha, solo con el panel abierto y cada 10 s. | `docker stats` muestrea ~1–2 s; en segundo plano no bloquea la lista ni gasta CPU con el panel cerrado. | `docker stats` en streaming permanente (proceso extra siempre vivo). |
+| Nombre «Omapose» (ID `io.github.jeanpidev.omapose`). | «Omacompose» ya existe en el marketplace (otro uso: tecla Compose de X); «Compose» a secas se confundía. Sigue la convención `oma*`. | Compose, Compachy, Dockside, Berth, Convoy. |

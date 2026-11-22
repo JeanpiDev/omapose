@@ -1,13 +1,13 @@
-# Compose for Omarchy
+# Omapose
 
 Docker Compose projects in the Omarchy bar. See every project and service at a glance, bring them up or down, restart or stop single services, check whether their ports answer HTTP, and follow logs — from a panel, without opening a separate app.
 
-![Compose panel](preview.png)
+![Omapose panel](preview.png)
 
 ## Install
 
 ```sh
-omarchy plugin add https://github.com/JeanpiDev/omarchy-compose.git --enable
+omarchy plugin add https://github.com/JeanpiDev/omapose.git --enable
 ```
 
 ### Requirements
@@ -42,20 +42,22 @@ Click the whale in the bar (right click refreshes). The number next to it is how
 | `s` | Start / stop a service |
 | `x` / Delete | Down a project (asks first) · stop a service |
 | `o` / `y` | Open / copy the first port of a service |
-| `f` | Forget a remembered project with no containers (also `quickshell ipc -p /usr/share/omarchy/shell call io.github.jeanpidev.omarchy-compose forget <name>`) |
+| `f` | Forget a remembered project with no containers (also `quickshell ipc -p /usr/share/omarchy/shell call io.github.jeanpidev.omapose forget <name>`) |
 | `,` | Settings and About |
 | `R` | Refresh |
 | Esc | Back · close |
 
 Service actions act on the container, so they also work for services behind compose `profiles:` and for containers whose service was removed from the file. Bringing a project down includes every profile and removes those orphan containers.
 
+The header shows how many services are running and how much RAM they use in total (sampled with `docker stats` every 10 s while the panel is open).
+
 Ports show whether they answer: `HTTP 200`, `HTTP 404 · API`, `HTTP 401 · auth`, `TCP only` (databases), `No response`. Only HTTP ports open in the browser.
 
-Projects you brought down stay in the list (remembered in `~/.local/state/omarchy/omarchy-compose/projects.json`) so you can bring them up again.
+Projects you brought down stay in the list (remembered in `~/.local/state/omarchy/omapose/projects.json`) so you can bring them up again.
 
 ## Configure
 
-Panel → gear, or `omarchy bar set io.github.jeanpidev.omarchy-compose <key> <value> --json`:
+Panel → gear, or `omarchy bar set io.github.jeanpidev.omapose <key> <value> --json`:
 
 | Key | Default | |
 |---|---|---|
@@ -68,7 +70,7 @@ Panel → gear, or `omarchy bar set io.github.jeanpidev.omarchy-compose <key> <v
 Move it in the bar like any widget:
 
 ```sh
-omarchy bar move io.github.jeanpidev.omarchy-compose --section right
+omarchy bar move io.github.jeanpidev.omapose --section right
 ```
 
 ## Works with
@@ -97,8 +99,8 @@ examples/demo/               # small nginx + redis project to try it with
 ## Remove
 
 ```sh
-omarchy plugin remove io.github.jeanpidev.omarchy-compose
-rm -rf ~/.local/state/omarchy/omarchy-compose   # optional: remembered projects
+omarchy plugin remove io.github.jeanpidev.omapose
+rm -rf ~/.local/state/omarchy/omapose   # optional: remembered projects
 ```
 
 ## License

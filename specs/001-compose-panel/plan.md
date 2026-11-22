@@ -6,7 +6,7 @@
 
 ## Summary
 
-Plugin `bar-widget` de Omarchy Quattro (`io.github.jeanpidev.omarchy-compose`) que lista los proyectos docker compose con sus servicios, estado, salud y puertos (con sondeo HTTP), y permite levantar/bajar/reiniciar proyectos y servicios y ver logs desde un `KeyboardPanel`. Datos con un único `docker ps -a` filtrado por etiquetas compose, refresco disparado por `docker events` (sin sondeo continuo), proyectos recordados en un archivo de estado, y estilo 100 % de tokens del tema/barra con la regla de color de Shibumi.
+Plugin `bar-widget` de Omarchy Quattro (`io.github.jeanpidev.omapose`) que lista los proyectos docker compose con sus servicios, estado, salud y puertos (con sondeo HTTP), y permite levantar/bajar/reiniciar proyectos y servicios y ver logs desde un `KeyboardPanel`. Datos con un único `docker ps -a` filtrado por etiquetas compose, refresco disparado por `docker events` (sin sondeo continuo), proyectos recordados en un archivo de estado, y estilo 100 % de tokens del tema/barra con la regla de color de Shibumi.
 
 ## Technical Context
 
@@ -14,7 +14,7 @@ Plugin `bar-widget` de Omarchy Quattro (`io.github.jeanpidev.omarchy-compose`) q
 
 **Primary Dependencies**: kit del shell `qs.Ui` (`BarWidget`, `WidgetButton`, `Panel`, `KeyboardPanel`, `PanelKeyCatcher`, `PanelHero`, `ConfirmDialog`, `TextField`), `qs.Commons` (`Color`, `Style`, `Translations`, `I18n`), `Quickshell.Io` (`Process`, `StdioCollector`, `FileView`, `IpcHandler`). Externas: `docker` + `docker compose` v2 (5.6.1 instalado), `curl`, `xdg-terminal-exec`.
 
-**Storage**: `~/.local/state/omarchy/omarchy-compose/projects.json` (proyectos recordados). Ajustes en `shell.json` vía `barWidget.schema` del manifiesto.
+**Storage**: `~/.local/state/omarchy/omapose/projects.json` (proyectos recordados). Ajustes en `shell.json` vía `barWidget.schema` del manifiesto.
 
 **Testing**: `node --test tests/` sobre `Model.js` (parsers, agregados, sondeo, merge de recordados, texto con marcado); `omarchy plugin validate`; `qmllint -I /usr/share/omarchy/shell`; checklist manual en `quickstart.md` (Shibumi y barra nativa).
 
@@ -62,7 +62,7 @@ specs/001-compose-panel/
 ### Source Code (repository root)
 
 ```text
-manifest.json             # id io.github.jeanpidev.omarchy-compose, kinds [bar-widget], homepage, schema
+manifest.json             # id io.github.jeanpidev.omapose, kinds [bar-widget], homepage, schema
 BarWidget.qml             # WidgetButton + contador + color Shibumi; crea ComposeStore; Loader de Panel; IpcHandler
 Panel.qml                 # Panel + KeyboardPanel + PanelKeyCatcher; vistas: lista | logs | ajustes
 ComposeStore.qml          # Process docker ps / events / acciones / sondeo; FileView de recordados; ListModel incremental

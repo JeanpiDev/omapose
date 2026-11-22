@@ -5,17 +5,17 @@
 ```json
 {
   "schemaVersion": 1,
-  "id": "io.github.jeanpidev.omarchy-compose",
-  "name": "Compose",
+  "id": "io.github.jeanpidev.omapose",
+  "name": "Omapose",
   "version": "0.1.0",
   "author": "JeanpiDev",
   "license": "MIT",
-  "homepage": "https://github.com/JeanpiDev/omarchy-compose",
+  "homepage": "https://github.com/JeanpiDev/omapose",
   "description": "Docker Compose projects in the Omarchy bar: status, up/down/restart, ports and logs.",
   "kinds": ["bar-widget"],
   "entryPoints": { "barWidget": "BarWidget.qml" },
   "barWidget": {
-    "displayName": "Compose",
+    "displayName": "Omapose",
     "category": "Developer Tools",
     "allowMultiple": false,
     "defaultSection": "right",
@@ -31,7 +31,7 @@
 }
 ```
 
-## IPC (`PluginIpc.qml`, `IpcHandler target: "io.github.jeanpidev.omarchy-compose"`)
+## IPC (`PluginIpc.qml`, `IpcHandler target: "io.github.jeanpidev.omapose"`)
 
 | Función | Efecto |
 |---|---|
@@ -51,6 +51,7 @@
 | Logs (panel) | `docker logs --tail <N> -f <containerId>` (salida acotada a N líneas en memoria) |
 | Logs (terminal) | `xdg-terminal-exec docker logs -f --tail 200 <containerId>` |
 | Sondeo | `sh -c '<script fijo>' compose-probe <url>…` (curl `--max-time 1`, ≤ 64 URLs; al abrir el panel, cada 60 s con el panel abierto y al aparecer un puerto nuevo) |
+| Memoria | `docker stats --no-stream --format {{.ID}}\t{{.MemUsage}} <ids en marcha>` (solo con el panel abierto, cada 10 s; suma del uso) |
 | Repo (About) | `Qt.openUrlExternally(manifest.homepage)` |
 
 Salidas de proceso: `head -c 262144` equivalente (descartar el exceso); stderr a `Action.message` (≤ 512).

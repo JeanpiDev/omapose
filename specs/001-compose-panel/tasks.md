@@ -17,7 +17,7 @@ description: "Task list for 001-compose-panel"
 
 - [X] T001 Crear `manifest.json` según contracts/interfaces.md (id, homepage, schema, defaults)
 - [X] T002 [P] Añadir `LICENSE` (MIT, JeanpiDev) y `.gitignore`
-- [X] T003 [P] Crear `scripts/dev-sync.sh` (rsync del repo a `~/.config/omarchy/plugins/io.github.jeanpidev.omarchy-compose`, excluye `.git`/`specs`/`.specify`/`.claude`/`tests`, luego `omarchy restart shell`)
+- [X] T003 [P] Crear `scripts/dev-sync.sh` (rsync del repo a `~/.config/omarchy/plugins/io.github.jeanpidev.omapose`, excluye `.git`/`specs`/`.specify`/`.claude`/`tests`, luego `omarchy restart shell`)
 - [X] T004 [P] Crear `i18n/en.json` e `i18n/es.json` con las claves base (título, estados, acciones, errores, vacío)
 
 ---
@@ -29,7 +29,7 @@ description: "Task list for 001-compose-panel"
 - [X] T007 Implementar en `Model.js` `groupProjects` (Project/Service, estado agregado, salud desde `.Status`) y `mergeRemembered` (recordados → `stopped`/`missing`)
 - [X] T008 [P] Tests en `tests/model.test.mjs` para T005–T007: config_files con comas, IPv6, texto con forma de marcado, entradas truncadas, proyecto recordado sin contenedores
 - [X] T009 Crear `ComposeStore.qml`: `Process` de `docker ps` con una sola reconstrucción por ciclo, `ListModel` de proyectos y servicios sincronizado por clave (`set`/`insert`/`remove`, nunca reasignar), `errorText` (daemon caído / permiso con acción sugerida)
-- [X] T010 En `ComposeStore.qml`: `FileView` de `~/.local/state/omarchy/omarchy-compose/projects.json` (lectura tolerante a JSON corrupto, escritura al ver proyectos, `forget(name)`)
+- [X] T010 En `ComposeStore.qml`: `FileView` de `~/.local/state/omarchy/omapose/projects.json` (lectura tolerante a JSON corrupto, escritura al ver proyectos, `forget(name)`)
 - [X] T011 En `ComposeStore.qml`: proceso largo `docker events` (filtro compose) → refresco con debounce 300 ms; reinicio con backoff 2→60 s; respaldo `idleRefreshSec`; terminar procesos en `Component.onDestruction`
 - [X] T012 Crear `BarWidget.qml`: `WidgetButton` con `onPressed` (izquierdo: toggle; derecho: refresh), `inkColor` = `widgetContentColor` en Shibumi / `barForeground` nativa, contador de servicios activos, instancia `ComposeStore`, `Loader` de `Panel.qml` con inyección (`bar`, `anchorItem`, `hostWidget`, `store`), `IpcHandler` (open/close/toggle/refresh/status)
 - [X] T013 Crear `Panel.qml`: `Panel` + `KeyboardPanel` + `PanelKeyCatcher` (Esc, Tab entre paneles), `PanelHero`, contenedor de vistas (lista | logs | ajustes), fondo opaco con tokens `Color.popups.*`
@@ -89,6 +89,7 @@ description: "Task list for 001-compose-panel"
 - [X] T031 Validar: `node --test tests/`, `omarchy plugin validate .`, `qmllint -I /usr/share/omarchy/shell` sobre todos los QML
 - [X] T032 Ejecutar checklist completo de quickstart.md en Shibumi y en `omarchy.bar`, incluidos cambio de tema, `pgrep -af "docker events"` tras desactivar/desinstalar, y medición de CPU en reposo (SC-005) — hecho: Shibumi, `omarchy.bar`, cambio de tema, summon/hide, desactivar/reactivar, desinstalar/reinstalar, SC-001 (10 proyectos/30 servicios: ~50 ms), SC-005, estado «missing», español. Docker detenido: mensaje + icono atenuado, sin procesos colgados, recuperación sola al arrancarlo.
 
+- [X] T035 RAM total de contenedores en marcha en la cabecera (`docker stats`, panel abierto) — FR-015
 - [X] T034 Cumplir `develop.html`: `qmllint` de la guía en 0 (IPC en `PluginIpc.qml`), Tab = panel vecino, README con Install/Usage/Configure/Remove, dependencias y privilegios
 - [X] T033 Opción de idioma (`language`: auto/en/es) en ajustes con `Strings.qml` propio — FR-010
 

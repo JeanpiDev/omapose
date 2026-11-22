@@ -159,7 +159,7 @@ Item {
 
         Text {
           textFormat: Text.PlainText
-          text: "Compose · v" + Model.VERSION
+          text: "Omapose · v" + Model.VERSION
           color: root.fg
           font.family: root.fontFamily
           font.pixelSize: Style.font.body

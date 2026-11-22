@@ -1,12 +1,12 @@
 # Quickstart (desarrollo y verificación)
 
 ```sh
-cd ~/Develop/personal/omarchy-compose
+cd ~/Develop/personal/omapose
 node --test tests/                                   # Model.js
 omarchy plugin validate .
 qmllint -I /usr/share/omarchy/shell BarWidget.qml Panel.qml ComposeStore.qml components/*.qml
-scripts/dev-sync.sh                                  # copia a ~/.config/omarchy/plugins/io.github.jeanpidev.omarchy-compose y reinicia el shell
-omarchy plugin enable io.github.jeanpidev.omarchy-compose
+scripts/dev-sync.sh                                  # copia a ~/.config/omarchy/plugins/io.github.jeanpidev.omapose y reinicia el shell
+omarchy plugin enable io.github.jeanpidev.omapose
 ```
 
 La recarga en caliente no siempre reinstancia widgets: tras cambios de QML usar `omarchy restart shell` (lo hace `dev-sync.sh`).

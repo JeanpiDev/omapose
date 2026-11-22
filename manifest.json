@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "id": "io.github.jeanpidev.omarchy-compose",
-  "name": "Compose",
+  "id": "io.github.jeanpidev.omapose",
+  "name": "Omapose",
   "version": "0.1.0",
   "author": "JeanpiDev",
   "license": "MIT",
-  "homepage": "https://github.com/JeanpiDev/omarchy-compose",
-  "description": "Docker Compose projects in the Omarchy bar: status, up/down/restart, ports and logs.",
+  "homepage": "https://github.com/JeanpiDev/omapose",
+  "description": "Docker Compose projects in the Omarchy bar: status, up/down/restart, ports, RAM and logs.",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Compose",
+    "displayName": "Omapose",
     "description": "Docker Compose projects: status, actions, ports and logs",
     "category": "Developer Tools",
     "allowMultiple": false,
