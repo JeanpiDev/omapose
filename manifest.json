@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.jeanpidev.omarchy-compose",
+  "name": "Compose",
+  "version": "0.1.0",
+  "author": "JeanpiDev",
+  "license": "MIT",
+  "homepage": "https://github.com/JeanpiDev/omarchy-compose",
+  "description": "Docker Compose projects in the Omarchy bar: status, up/down/restart, ports and logs.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Compose",
+    "description": "Docker Compose projects: status, actions, ports and logs",
+    "category": "Developer Tools",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "idleRefreshSec": 60,
+      "logLines": 200,
+      "probePorts": true,
+      "showStopped": true,
+      "language": "auto"
+    },
+    "schema": [
+      {
+        "key": "idleRefreshSec",
+        "type": "integer",
+        "label": "Fallback refresh (seconds)",
+        "min": 15,
+        "max": 3600,
+        "step": 15,
+        "defaultValue": 60
+      },
+      {
+        "key": "logLines",
+        "type": "integer",
+        "label": "Log lines",
+        "min": 50,
+        "max": 2000,
+        "step": 50,
+        "defaultValue": 200
+      },
+      {
+        "key": "probePorts",
+        "type": "boolean",
+        "label": "Check whether ports answer HTTP",
+        "defaultValue": true
+      },
+      {
+        "key": "showStopped",
+        "type": "boolean",
+        "label": "Show stopped projects",
+        "defaultValue": true
+      },
+      {
+        "key": "language",
+        "type": "enum",
+        "label": "Language",
+        "options": [
+          "auto",
+          "en",
+          "es"
+        ],
+        "defaultValue": "auto",
+        "description": "auto follows Omarchy's language."
+      }
+    ]
+  }
+}
