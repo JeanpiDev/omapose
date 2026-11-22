@@ -84,7 +84,7 @@ Desde un servicio abro sus últimas líneas de log dentro del panel, siguiéndol
 - **FR-013**: El plugin MUST abrirse y cerrarse también por comando del shell (`summon`/`hide`) y sobrevivir a desactivar, reactivar, reiniciar el shell y desinstalar sin dejar procesos.
 - **FR-008**: El panel MUST manejarse completo con teclado (navegar, desplegar, acciones, cerrar con Esc).
 - **FR-009**: El estado MUST refrescarse solo mientras el panel está abierto y con un intervalo configurable en reposo.
-- **FR-010**: Los textos MUST estar en español e inglés y seguir el idioma de Omarchy.
+- **FR-010**: Los textos MUST estar en español e inglés; por defecto siguen el idioma de Omarchy y el usuario MUST poder fijar uno en los ajustes.
 - **FR-011**: El sistema MUST operar solo sobre el Docker local, sin acceso a red externa.
 
 ### Key Entities

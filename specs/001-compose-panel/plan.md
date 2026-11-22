@@ -66,6 +66,8 @@ manifest.json             # id io.github.jeanpidev.omarchy-compose, kinds [bar-w
 BarWidget.qml             # WidgetButton + contador + color Shibumi; crea ComposeStore; Loader de Panel; IpcHandler
 Panel.qml                 # Panel + KeyboardPanel + PanelKeyCatcher; vistas: lista | logs | ajustes
 ComposeStore.qml          # Process docker ps / events / acciones / sondeo; FileView de recordados; ListModel incremental
+Strings.qml               # catálogo i18n propio con ajuste de idioma (auto/en/es)
+PluginIpc.qml             # IpcHandler (refresh/status/forget) aparte: qmllint falla con IpcHandler tipado
 Model.js                  # lógica pura (parse, agregados, merge, sondeo, etiquetas) — testeable en node
 components/
 ├── ProjectRow.qml        # cabecera de proyecto (estado agregado, acciones, desplegar)
