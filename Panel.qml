@@ -311,43 +311,94 @@ Panel {
         anchors.fill: parent
         visible: root.view === "list"
 
-        PanelHero {
+        // Same layout as qs.Ui PanelHero, plus a second meta line with the
+        // memory used by running containers.
+        Item {
           id: hero
           anchors.left: parent.left
           anchors.right: parent.right
           anchors.top: parent.top
-          title: root.t("title")
-          meta: root.store ? tr.tn("panel.services", root.store.runningCount).arg(Commons.I18n.formatNumber(root.store.runningCount)) : ""
-          foreground: root.fg
-          fontFamily: root.fontFamily
-          iconComponent: Component {
+          implicitHeight: Math.max(heroIcon.implicitHeight, heroLabels.implicitHeight, heroActions.implicitHeight)
+          height: implicitHeight
+
+          Text {
+            id: heroIcon
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            textFormat: Text.PlainText
+            text: ""
+            color: Color.accent
+            font.family: root.fontFamily
+            font.pixelSize: Style.font.display
+          }
+
+          Column {
+            id: heroLabels
+            anchors.left: heroIcon.right
+            anchors.leftMargin: Style.space(14)
+            anchors.right: heroActions.left
+            anchors.rightMargin: Style.space(12)
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: Style.space(2)
+
             Text {
+              width: parent.width
               textFormat: Text.PlainText
-              text: ""
-              color: Color.accent
+              text: root.t("title")
+              color: root.fg
               font.family: root.fontFamily
-              font.pixelSize: Style.font.display
+              font.pixelSize: Style.font.title
+              font.bold: true
+              elide: Text.ElideRight
+            }
+
+            Text {
+              width: parent.width
+              textFormat: Text.PlainText
+              text: root.store ? tr.tn("panel.services", root.store.runningCount).arg(Commons.I18n.formatNumber(root.store.runningCount)).toUpperCase() : ""
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              font.bold: true
+              font.letterSpacing: 1.2
+              elide: Text.ElideRight
+            }
+
+            Text {
+              width: parent.width
+              readonly property var parts: root.store && root.store.runningCount > 0 ? Model.bytesParts(root.store.memoryBytes) : null
+              visible: !!parts
+              textFormat: Text.PlainText
+              text: parts ? root.t("panel.memory").arg(Commons.I18n.formatNumber(parts.value, parts.decimals) + " " + parts.unit).toUpperCase() : ""
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              font.bold: true
+              font.letterSpacing: 1.2
+              elide: Text.ElideRight
             }
           }
-          trailingControl: Component {
-            Row {
-              spacing: Style.space(2)
-              PanelActionButton {
-                iconText: ""
-                tooltipText: "R"
-                foreground: root.fg
-                hoverColor: Color.accent
-                fontFamily: root.fontFamily
-                onClicked: if (root.store) root.store.refresh()
-              }
-              PanelActionButton {
-                iconText: ""
-                tooltipText: root.t("action.settings")
-                foreground: root.fg
-                hoverColor: Color.accent
-                fontFamily: root.fontFamily
-                onClicked: root.view = "settings"
-              }
+
+          Row {
+            id: heroActions
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: Style.space(2)
+            PanelActionButton {
+              iconText: ""
+              tooltipText: "R"
+              foreground: root.fg
+              hoverColor: Color.accent
+              fontFamily: root.fontFamily
+              onClicked: if (root.store) root.store.refresh()
+            }
+            PanelActionButton {
+              iconText: ""
+              tooltipText: root.t("action.settings")
+              foreground: root.fg
+              hoverColor: Color.accent
+              fontFamily: root.fontFamily
+              onClicked: root.view = "settings"
             }
           }
         }

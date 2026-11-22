@@ -1,5 +1,5 @@
 {
-  "title": "Compose",
+  "title": "Omapose",
   "tooltip": "Docker Compose",
   "panel.services": {
     "one": "%1 service running",
@@ -72,5 +72,6 @@
   "hint.close": "close",
   "settings.language": "Language",
   "settings.langAuto": "Automatic",
-  "hint.panels": "next panel"
+  "hint.panels": "next panel",
+  "panel.memory": "%1 RAM in use"
 }

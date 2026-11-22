@@ -3,8 +3,8 @@
 // bounded and validated here before the UI sees it.
 
 var VERSION = "0.1.0"
-var PLUGIN_ID = "io.github.jeanpidev.omarchy-compose"
-var HOMEPAGE = "https://github.com/JeanpiDev/omarchy-compose"
+var PLUGIN_ID = "io.github.jeanpidev.omapose"
+var HOMEPAGE = "https://github.com/JeanpiDev/omapose"
 
 var MAX_OUTPUT_BYTES = 262144
 var MAX_CONTAINERS = 256
@@ -63,7 +63,7 @@ function isAbsPath(path) {
 // Wraps an argv so its stdout is capped, without interpolating any value
 // into the shell script: the argv travels as "$@".
 function capped(argv) {
-  return ["sh", "-c", "\"$@\" | head -c " + MAX_OUTPUT_BYTES, "omarchy-compose"].concat(argv)
+  return ["sh", "-c", "\"$@\" | head -c " + MAX_OUTPUT_BYTES, "omapose"].concat(argv)
 }
 
 // ---- docker ps -----------------------------------------------------------------
@@ -514,7 +514,7 @@ var PROBE_SCRIPT = [
 ].join("\n")
 
 function probeArgs(urls) {
-  return ["sh", "-c", PROBE_SCRIPT, "omarchy-compose-probe"].concat(urls.slice(0, MAX_PROBES))
+  return ["sh", "-c", PROBE_SCRIPT, "omapose-probe"].concat(urls.slice(0, MAX_PROBES))
 }
 
 // Lines "<url>\t<http_code>\t<curl_exit>" -> { url: "http:<code>" | "tcp" | "down" }
@@ -626,6 +626,69 @@ function cleanMessage(stderr) {
   return str(kept.join(" · "), MAX_MESSAGE)
 }
 
+// ---- memory (docker stats) -----------------------------------------------------
+
+var SIZE_UNITS = { "B": 1, "kB": 1e3, "KB": 1e3, "KiB": 1024, "MB": 1e6, "MiB": 1048576,
+  "GB": 1e9, "GiB": 1073741824, "TB": 1e12, "TiB": 1099511627776 }
+
+// "123.4MiB" -> bytes, or -1 when it cannot be parsed.
+function parseSize(text) {
+  var m = /^\s*([0-9]+(?:\.[0-9]+)?)\s*([A-Za-z]+)\s*$/.exec(str(text, 64))
+  if (!m || !SIZE_UNITS[m[2]]) return -1
+  return Math.round(parseFloat(m[1]) * SIZE_UNITS[m[2]])
+}
+
+function runningContainerIds(projects) {
+  var out = []
+  for (var i = 0; i < projects.length; i++) {
+    var services = projects[i].services
+    for (var s = 0; s < services.length && out.length < MAX_CONTAINERS; s++)
+      if (services[s].state === "running" && isContainerId(services[s].containerId)) out.push(services[s].containerId)
+  }
+  return out
+}
+
+function statsArgs(ids) {
+  var valid = []
+  for (var i = 0; i < ids.length && valid.length < MAX_CONTAINERS; i++) if (isContainerId(ids[i])) valid.push(ids[i])
+  if (!valid.length) return null
+  return ["docker", "stats", "--no-stream", "--format", "{{.ID}}\t{{.MemUsage}}"].concat(valid)
+}
+
+// Lines "<short id>\t<used> / <limit>" -> { id: usedBytes }
+function parseStats(raw) {
+  var out = {}
+  var lines = str(raw, MAX_OUTPUT_BYTES).split("\n")
+  for (var i = 0; i < lines.length && i < MAX_CONTAINERS; i++) {
+    var parts = lines[i].split("\t")
+    if (parts.length < 2 || !isContainerId(trim(parts[0]))) continue
+    var used = parseSize(parts[1].split("/")[0])
+    if (used >= 0) out[trim(parts[0])] = used
+  }
+  return out
+}
+
+// Sum of the memory of running containers; stats ids may be short (12) or full.
+function memoryTotal(projects, stats) {
+  var ids = runningContainerIds(projects)
+  var keys = Object.keys(stats || {})
+  var total = 0
+  for (var i = 0; i < ids.length; i++) {
+    for (var k = 0; k < keys.length; k++) {
+      if (ids[i].indexOf(keys[k]) === 0 || keys[k].indexOf(ids[i]) === 0) { total += stats[keys[k]]; break }
+    }
+  }
+  return total
+}
+
+// bytes -> { value, unit, decimals } in binary units shown as MB / GB.
+function bytesParts(bytes) {
+  if (!(bytes >= 0)) return null
+  var mib = bytes / 1048576
+  if (mib < 1024) return { value: mib, unit: "MB", decimals: mib < 10 ? 1 : 0 }
+  return { value: mib / 1024, unit: "GB", decimals: 1 }
+}
+
 var LANGUAGES = ["en", "es"]
 
 // "auto" follows Omarchy's language (base code, e.g. "es-CO" -> "es");
@@ -693,6 +756,12 @@ if (typeof module !== "undefined") {
     terminalLogsArgs: terminalLogsArgs,
     cleanMessage: cleanMessage,
     languageFor: languageFor,
+    parseSize: parseSize,
+    runningContainerIds: runningContainerIds,
+    statsArgs: statsArgs,
+    parseStats: parseStats,
+    memoryTotal: memoryTotal,
+    bytesParts: bytesParts,
     pluralPick: pluralPick,
     shortPath: shortPath
   }

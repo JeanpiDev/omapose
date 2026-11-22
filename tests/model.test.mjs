@@ -279,3 +279,26 @@ test("pluralPick and catalogs: one/other and same keys in en and es", () => {
   const es = JSON.parse(readFileSync(new URL("../i18n/es.json", import.meta.url)))
   assert.deepEqual(Object.keys(en).sort(), Object.keys(es).sort())
 })
+
+test("memory: parse docker stats sizes and sum running containers", () => {
+  assert.equal(M.parseSize("512MiB"), 536870912)
+  assert.equal(M.parseSize("1.5GiB"), 1610612736)
+  assert.equal(M.parseSize("12kB"), 12000)
+  assert.equal(M.parseSize("0B"), 0)
+  assert.equal(M.parseSize("--"), -1)
+  const a = "a".repeat(64), b = "b".repeat(64)
+  const projects = M.groupProjects(M.parseContainers([
+    line({ service: "api", id: a }),
+    line({ service: "db", id: b }),
+    line({ service: "old", id: "c".repeat(64), state: "exited", status: "Exited (1)" })
+  ].join("\n")))
+  assert.deepEqual(M.runningContainerIds(projects).sort(), [a, b])
+  assert.deepEqual(M.statsArgs([a, "nope"]), ["docker", "stats", "--no-stream", "--format", "{{.ID}}\t{{.MemUsage}}", a])
+  assert.equal(M.statsArgs(["nope"]), null)
+  const stats = M.parseStats("aaaaaaaaaaaa\t100MiB / 15.5GiB\nbbbbbbbbbbbb\t1GiB / 15.5GiB\n<img>\t1MiB / 2MiB\n")
+  assert.deepEqual(Object.keys(stats).sort(), ["aaaaaaaaaaaa", "bbbbbbbbbbbb"])
+  assert.equal(M.memoryTotal(projects, stats), 104857600 + 1073741824)
+  assert.deepEqual(M.bytesParts(104857600), { value: 100, unit: "MB", decimals: 0 })
+  assert.deepEqual(M.bytesParts(1610612736), { value: 1.5, unit: "GB", decimals: 1 })
+  assert.equal(M.bytesParts(-1), null)
+})

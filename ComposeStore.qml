@@ -54,7 +54,7 @@ Item {
   property bool dirReady: false
 
   readonly property string home: Quickshell.env("HOME") || ""
-  readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || (home + "/.local/state")) + "/omarchy/omarchy-compose"
+  readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || (home + "/.local/state")) + "/omarchy/omapose"
 
   signal rowsSynced()
 
@@ -87,7 +87,7 @@ Item {
     }
     var files = kind ? [] : Model.filesToCheck(root.baseProjects, root.remembered)
     if (files.length) {
-      existProc.command = ["sh", "-c", "for f in \"$@\"; do [ -e \"$f\" ] && printf '%s\\n' \"$f\"; done; exit 0", "omarchy-compose-exists"].concat(files)
+      existProc.command = ["sh", "-c", "for f in \"$@\"; do [ -e \"$f\" ] && printf '%s\\n' \"$f\"; done; exit 0", "omapose-exists"].concat(files)
       existProc.running = true
     } else {
       root.existing = ({})
@@ -238,6 +238,38 @@ Item {
   onPanelOpenChanged: if (panelOpen) refresh()
   onShowStoppedChanged: syncRows()
 
+  // ---- memory of running containers (only while the panel is open) --------
+  // `docker stats --no-stream` samples for ~1-2 s, so it runs in the
+  // background every 10 s and never blocks the list.
+  property real memoryBytes: -1
+
+  Timer {
+    interval: 10000
+    running: root.panelOpen && root.loaded && root.runningCount > 0
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: root.runStats()
+  }
+
+  onRunningCountChanged: if (runningCount === 0) memoryBytes = 0
+
+  function runStats() {
+    if (statsProc.running) return
+    var argv = Model.statsArgs(Model.runningContainerIds(root.projects))
+    if (!argv) { root.memoryBytes = 0; return }
+    statsProc.command = Model.capped(argv)
+    statsProc.running = true
+  }
+
+  Process {
+    id: statsProc
+    running: false
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.memoryBytes = Model.memoryTotal(root.projects, Model.parseStats(text))
+    }
+  }
+
   // ---- HTTP probe (only while the panel is open) ----------------------------
   // Each probe is a real GET that shows up in the app's access log, so probe
   // once when the panel opens and then rarely.
@@ -367,7 +399,7 @@ Item {
       property int exitCode: -1
       property int done: 0
       // stderr is folded into stdout (bounded) so errors can be shown in the row.
-      command: ["sh", "-c", "out=$(\"$@\" 2>&1); c=$?; printf '%s' \"$out\" | tail -c 4096; exit $c", "omarchy-compose-action"].concat(argv)
+      command: ["sh", "-c", "out=$(\"$@\" 2>&1); c=$?; printf '%s' \"$out\" | tail -c 4096; exit $c", "omapose-action"].concat(argv)
       stdout: StdioCollector {
         id: actionOut
         waitForEnd: true
@@ -439,5 +471,6 @@ Item {
     psProc.running = false
     probeProc.running = false
     existProc.running = false
+    statsProc.running = false
   }
 }
