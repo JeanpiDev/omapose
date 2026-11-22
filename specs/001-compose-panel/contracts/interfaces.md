@@ -51,7 +51,7 @@
 | Logs (panel) | `docker logs --tail <N> -f <containerId>` (salida acotada a N líneas en memoria) |
 | Logs (terminal) | `xdg-terminal-exec docker logs -f --tail 200 <containerId>` |
 | Sondeo | `sh -c '<script fijo>' compose-probe <url>…` (curl `--max-time 1`, ≤ 64 URLs; al abrir el panel, cada 60 s con el panel abierto y al aparecer un puerto nuevo) |
-| Memoria | `docker stats --no-stream --format {{.ID}}\t{{.MemUsage}} <ids en marcha>` (solo con el panel abierto, cada 10 s; suma del uso) |
+| Memoria | `docker stats --no-stream --format {{.ID}}\t{{.MemUsage}}\t{{.CPUPerc}} <ids en marcha>` (solo con el panel abierto, cada 10 s; suma de RAM y CPU, CPU ÷ `nproc` = % del sistema) |
 | Repo (About) | `Qt.openUrlExternally(manifest.homepage)` |
 
 Salidas de proceso: `head -c 262144` equivalente (descartar el exceso); stderr a `Action.message` (≤ 512).

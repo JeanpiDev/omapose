@@ -652,41 +652,66 @@ function statsArgs(ids) {
   var valid = []
   for (var i = 0; i < ids.length && valid.length < MAX_CONTAINERS; i++) if (isContainerId(ids[i])) valid.push(ids[i])
   if (!valid.length) return null
-  return ["docker", "stats", "--no-stream", "--format", "{{.ID}}\t{{.MemUsage}}"].concat(valid)
+  return ["docker", "stats", "--no-stream", "--format", "{{.ID}}\t{{.MemUsage}}\t{{.CPUPerc}}"].concat(valid)
 }
 
-// Lines "<short id>\t<used> / <limit>" -> { id: usedBytes }
+function parsePercent(text) {
+  var m = /^\s*([0-9]+(?:\.[0-9]+)?)\s*%\s*$/.exec(str(text, 32))
+  return m ? parseFloat(m[1]) : -1
+}
+
+// Lines "<short id>\t<used> / <limit>\t<cpu>%" ->
+// { byId: { id: { mem, cpu } }, limit } (limit = host memory unless capped).
 function parseStats(raw) {
-  var out = {}
+  var out = { byId: {}, limit: -1 }
   var lines = str(raw, MAX_OUTPUT_BYTES).split("\n")
   for (var i = 0; i < lines.length && i < MAX_CONTAINERS; i++) {
     var parts = lines[i].split("\t")
     if (parts.length < 2 || !isContainerId(trim(parts[0]))) continue
-    var used = parseSize(parts[1].split("/")[0])
-    if (used >= 0) out[trim(parts[0])] = used
+    var memParts = parts[1].split("/")
+    var used = parseSize(memParts[0])
+    if (used < 0) continue
+    var limit = memParts.length > 1 ? parseSize(memParts[1]) : -1
+    if (limit > out.limit) out.limit = limit
+    var cpu = parts.length > 2 ? parsePercent(parts[2]) : -1
+    out.byId[trim(parts[0])] = { mem: used, cpu: cpu < 0 ? 0 : cpu }
   }
   return out
 }
 
-// Sum of the memory of running containers; stats ids may be short (12) or full.
-function memoryTotal(projects, stats) {
+// Totals for running containers. cpu is docker's sum (100 = one core);
+// cpuSystem divides it by the number of cores (0-100 % of the machine).
+function usageTotal(projects, stats, cores) {
   var ids = runningContainerIds(projects)
-  var keys = Object.keys(stats || {})
-  var total = 0
+  var byId = stats && stats.byId ? stats.byId : {}
+  var keys = Object.keys(byId)
+  var mem = 0
+  var cpu = 0
   for (var i = 0; i < ids.length; i++) {
     for (var k = 0; k < keys.length; k++) {
-      if (ids[i].indexOf(keys[k]) === 0 || keys[k].indexOf(ids[i]) === 0) { total += stats[keys[k]]; break }
+      if (ids[i].indexOf(keys[k]) === 0 || keys[k].indexOf(ids[i]) === 0) {
+        mem += byId[keys[k]].mem
+        cpu += byId[keys[k]].cpu
+        break
+      }
     }
   }
-  return total
+  var n = Math.max(1, parseInt(cores, 10) || 1)
+  var limit = stats ? stats.limit : -1
+  return {
+    mem: mem,
+    cpuSystem: Math.min(100, cpu / n),
+    limit: limit,
+    memPercent: limit > 0 ? mem * 100 / limit : -1
+  }
 }
 
-// bytes -> { value, unit, decimals } in binary units shown as MB / GB.
+// bytes -> { value, unit, decimals } in binary units (MiB / GiB, like docker).
 function bytesParts(bytes) {
   if (!(bytes >= 0)) return null
   var mib = bytes / 1048576
-  if (mib < 1024) return { value: mib, unit: "MB", decimals: mib < 10 ? 1 : 0 }
-  return { value: mib / 1024, unit: "GB", decimals: 1 }
+  if (mib < 1024) return { value: mib, unit: "MiB", decimals: mib < 10 ? 1 : 0 }
+  return { value: mib / 1024, unit: "GiB", decimals: 1 }
 }
 
 var LANGUAGES = ["en", "es"]
@@ -760,7 +785,8 @@ if (typeof module !== "undefined") {
     runningContainerIds: runningContainerIds,
     statsArgs: statsArgs,
     parseStats: parseStats,
-    memoryTotal: memoryTotal,
+    parsePercent: parsePercent,
+    usageTotal: usageTotal,
     bytesParts: bytesParts,
     pluralPick: pluralPick,
     shortPath: shortPath

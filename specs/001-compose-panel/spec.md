@@ -80,7 +80,7 @@ Desde un servicio abro sus últimas líneas de log dentro del panel, siguiéndol
 - **FR-006**: El indicador de la barra MUST mostrar los servicios en marcha y funcionar igual (click, datos, apertura del panel) tanto en la barra Shibumi como en la nativa.
 - **FR-007**: El icono y el texto de la barra MUST tomar el color de primer plano de la barra que lo aloja (p. ej. el acento de Shibumi), y el panel los colores del tema activo; todo se actualiza en vivo al cambiar tema o estilo de barra. El fondo del panel MUST ser opaco (sin texto de ventanas detrás).
 - **FR-012**: Los refrescos automáticos MUST conservar la posición del scroll, el elemento seleccionado, el foco y el texto del buscador; solo cambian las filas afectadas.
-- **FR-015**: La cabecera del panel MUST mostrar, bajo el número de servicios en marcha, la RAM total que usan los contenedores en marcha.
+- **FR-015**: La cabecera del panel MUST mostrar, bajo el número de contenedores en marcha, la CPU de Docker (% del sistema) y su RAM (uso, % y total del equipo).
 - **FR-014**: Los ajustes del plugin MUST incluir una sección «Acerca de» con nombre, versión, una nota de privacidad (solo Docker local, nada sale del equipo) y el enlace al repositorio, que se abre en el navegador.
 - **FR-013**: El plugin MUST abrirse y cerrarse también por comando del shell (`summon`/`hide`) y sobrevivir a desactivar, reactivar, reiniciar el shell y desinstalar sin dejar procesos.
 - **FR-008**: El panel MUST manejarse completo con teclado (navegar, desplegar, acciones, cerrar con Esc).

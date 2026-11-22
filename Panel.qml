@@ -355,21 +355,7 @@ Panel {
             Text {
               width: parent.width
               textFormat: Text.PlainText
-              text: root.store ? tr.tn("panel.services", root.store.runningCount).arg(Commons.I18n.formatNumber(root.store.runningCount)).toUpperCase() : ""
-              color: root.dim
-              font.family: root.fontFamily
-              font.pixelSize: Style.font.caption
-              font.bold: true
-              font.letterSpacing: 1.2
-              elide: Text.ElideRight
-            }
-
-            Text {
-              width: parent.width
-              readonly property var parts: root.store && root.store.runningCount > 0 ? Model.bytesParts(root.store.memoryBytes) : null
-              visible: !!parts
-              textFormat: Text.PlainText
-              text: parts ? root.t("panel.memory").arg(Commons.I18n.formatNumber(parts.value, parts.decimals) + " " + parts.unit).toUpperCase() : ""
+              text: root.store ? tr.tn("panel.running", root.store.runningCount).arg(Commons.I18n.formatNumber(root.store.runningCount)).toUpperCase() : ""
               color: root.dim
               font.family: root.fontFamily
               font.pixelSize: Style.font.caption
@@ -403,11 +389,74 @@ Panel {
           }
         }
 
+        // Docker CPU / RAM of running containers (docker stats, panel open).
+        Row {
+          id: usageRow
+          anchors.left: parent.left
+          anchors.right: parent.right
+          anchors.top: hero.bottom
+          anchors.topMargin: visible ? Style.space(12) : 0
+          height: visible ? implicitHeight : 0
+          spacing: Style.space(28)
+          readonly property var usage: root.store && root.store.runningCount > 0 ? root.store.usage : null
+          readonly property var mem: usage ? Model.bytesParts(usage.mem) : null
+          readonly property var limit: usage && usage.limit > 0 ? Model.bytesParts(usage.limit) : null
+          visible: !!usage
+
+          Column {
+            spacing: Style.space(2)
+            Text {
+              textFormat: Text.PlainText
+              text: root.t("stats.cpu").toUpperCase()
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              font.bold: true
+              font.letterSpacing: 1.2
+            }
+            Text {
+              textFormat: Text.PlainText
+              text: usageRow.usage ? root.t("stats.cpuValue").arg(Commons.I18n.formatNumber(usageRow.usage.cpuSystem, usageRow.usage.cpuSystem < 10 ? 1 : 0) + "%") : ""
+              color: root.fg
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.body
+            }
+          }
+
+          Column {
+            spacing: Style.space(2)
+            Text {
+              textFormat: Text.PlainText
+              text: root.t("stats.ram").toUpperCase()
+              color: root.dim
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              font.bold: true
+              font.letterSpacing: 1.2
+            }
+            Text {
+              textFormat: Text.PlainText
+              text: {
+                if (!usageRow.mem) return ""
+                var used = Commons.I18n.formatNumber(usageRow.mem.value, usageRow.mem.decimals) + " " + usageRow.mem.unit
+                if (!usageRow.limit || usageRow.usage.memPercent < 0) return used
+                return root.t("stats.ramValue")
+                  .arg(used)
+                  .arg(Commons.I18n.formatNumber(usageRow.usage.memPercent, usageRow.usage.memPercent < 10 ? 1 : 0) + "%")
+                  .arg(Commons.I18n.formatNumber(usageRow.limit.value, usageRow.limit.decimals) + " " + usageRow.limit.unit)
+              }
+              color: root.fg
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.body
+            }
+          }
+        }
+
         TextField {
           id: searchField
           anchors.left: parent.left
           anchors.right: parent.right
-          anchors.top: hero.bottom
+          anchors.top: usageRow.bottom
           anchors.topMargin: Style.space(10)
           foreground: root.fg
           font.family: root.fontFamily
@@ -548,13 +597,20 @@ Panel {
           anchors.right: parent.right
           anchors.bottom: parent.bottom
           textFormat: Text.PlainText
+          // Each "key action" pair is glued with no-break spaces so a wrap only
+          // ever happens between hints.
+          function glue(s) {
+            return String(s).split(" · ").map(function(part) { return part.replace(/ /g, "\u00a0") }).join(" · ")
+          }
           text: root.statusText !== "" ? root.statusText
-            : root.listFocus
+            : glue(root.listFocus
               ? "/ " + root.t("hint.search") + " · ↑↓ " + root.t("hint.move") + " · Enter " + root.t("hint.expand") + " · " + root.t("hint.actions") + " · → " + root.t("hint.logs")
-              : "↓ " + root.t("hint.list") + " · Tab " + root.t("hint.panels") + " · Esc " + root.t("hint.close")
+              : "↓ " + root.t("hint.list") + " · Tab " + root.t("hint.panels") + " · Esc " + root.t("hint.close"))
           color: root.statusText !== "" ? Color.accent : root.dim
           font.family: root.fontFamily
           font.pixelSize: Style.font.caption
+          wrapMode: Text.WordWrap
+          maximumLineCount: 2
           elide: Text.ElideRight
         }
       }

@@ -89,7 +89,7 @@ description: "Task list for 001-compose-panel"
 - [X] T031 Validar: `node --test tests/`, `omarchy plugin validate .`, `qmllint -I /usr/share/omarchy/shell` sobre todos los QML
 - [X] T032 Ejecutar checklist completo de quickstart.md en Shibumi y en `omarchy.bar`, incluidos cambio de tema, `pgrep -af "docker events"` tras desactivar/desinstalar, y medición de CPU en reposo (SC-005) — hecho: Shibumi, `omarchy.bar`, cambio de tema, summon/hide, desactivar/reactivar, desinstalar/reinstalar, SC-001 (10 proyectos/30 servicios: ~50 ms), SC-005, estado «missing», español. Docker detenido: mensaje + icono atenuado, sin procesos colgados, recuperación sola al arrancarlo.
 
-- [X] T035 RAM total de contenedores en marcha en la cabecera (`docker stats`, panel abierto) — FR-015
+- [X] T035 CPU y RAM de Docker en la cabecera (`docker stats` + `nproc`, panel abierto) — FR-015; pie de atajos en dos líneas sin cortar
 - [X] T034 Cumplir `develop.html`: `qmllint` de la guía en 0 (IPC en `PluginIpc.qml`), Tab = panel vecino, README con Install/Usage/Configure/Remove, dependencias y privilegios
 - [X] T033 Opción de idioma (`language`: auto/en/es) en ajustes con `Strings.qml` propio — FR-010
 

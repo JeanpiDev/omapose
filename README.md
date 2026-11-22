@@ -49,7 +49,7 @@ Click the whale in the bar (right click refreshes). The number next to it is how
 
 Service actions act on the container, so they also work for services behind compose `profiles:` and for containers whose service was removed from the file. Bringing a project down includes every profile and removes those orphan containers.
 
-The header shows how many services are running and how much RAM they use in total (sampled with `docker stats` every 10 s while the panel is open).
+The header shows how many containers are running, Docker's CPU as a share of the whole machine, and its RAM (used, % and total), sampled with `docker stats` every 10 s while the panel is open.
 
 Ports show whether they answer: `HTTP 200`, `HTTP 404 · API`, `HTTP 401 · auth`, `TCP only` (databases), `No response`. Only HTTP ports open in the browser.
 

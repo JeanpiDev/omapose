@@ -73,5 +73,12 @@
   "settings.language": "Language",
   "settings.langAuto": "Automatic",
   "hint.panels": "next panel",
-  "panel.memory": "%1 RAM in use"
+  "panel.running": {
+    "one": "%1 running",
+    "other": "%1 running"
+  },
+  "stats.cpu": "Docker CPU",
+  "stats.ram": "Docker RAM",
+  "stats.cpuValue": "%1 of system",
+  "stats.ramValue": "%1 (%2 of %3)"
 }

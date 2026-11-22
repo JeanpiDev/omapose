@@ -238,10 +238,21 @@ Item {
   onPanelOpenChanged: if (panelOpen) refresh()
   onShowStoppedChanged: syncRows()
 
-  // ---- memory of running containers (only while the panel is open) --------
+  // ---- CPU / RAM of running containers (only while the panel is open) ----
   // `docker stats --no-stream` samples for ~1-2 s, so it runs in the
   // background every 10 s and never blocks the list.
-  property real memoryBytes: -1
+  property var usage: null
+  property int cores: 1
+
+  Process {
+    id: coresProc
+    command: ["nproc"]
+    running: true
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.cores = Math.max(1, parseInt(String(text).trim(), 10) || 1)
+    }
+  }
 
   Timer {
     interval: 10000
@@ -251,12 +262,12 @@ Item {
     onTriggered: root.runStats()
   }
 
-  onRunningCountChanged: if (runningCount === 0) memoryBytes = 0
+  onRunningCountChanged: if (runningCount === 0) usage = null
 
   function runStats() {
     if (statsProc.running) return
     var argv = Model.statsArgs(Model.runningContainerIds(root.projects))
-    if (!argv) { root.memoryBytes = 0; return }
+    if (!argv) { root.usage = null; return }
     statsProc.command = Model.capped(argv)
     statsProc.running = true
   }
@@ -266,7 +277,7 @@ Item {
     running: false
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: root.memoryBytes = Model.memoryTotal(root.projects, Model.parseStats(text))
+      onStreamFinished: root.usage = Model.usageTotal(root.projects, Model.parseStats(text), root.cores)
     }
   }
 
