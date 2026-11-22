@@ -2,3 +2,7 @@ node_modules/
 *.log
 .env*
 .claude/settings.local.json
+
+# Spec Kit tooling (kept locally, not shipped with the plugin)
+.specify/
+.claude/

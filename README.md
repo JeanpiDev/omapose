@@ -16,7 +16,7 @@ omarchy plugin add https://github.com/JeanpiDev/omapose.git --enable
 |---|---|
 | Omarchy Quattro | the shell, bar and theme |
 | `docker` + `docker compose` v2 | listing, actions and logs |
-| your user in the `docker` group (`omarchy setup security sudoless-docker`) | talking to the daemon without sudo |
+| your user in the `docker` group ([Docker post-install steps](https://docs.docker.com/engine/install/linux-postinstall/)) | talking to the daemon as your user |
 | `curl` | optional HTTP check of published ports |
 | `wl-copy` (wl-clipboard) | copying a port address |
 | `xdg-open` | opening a port in the browser |
@@ -24,7 +24,7 @@ omarchy plugin add https://github.com/JeanpiDev/omapose.git --enable
 
 All of them ship with Omarchy except Docker itself.
 
-**Privileges.** The plugin never uses sudo. It runs `docker` as your user, so it can do whatever your user can do with Docker: membership of the `docker` group is equivalent to root on this machine. Actions that remove containers (`Down`) always ask first.
+**Privileges.** The plugin never asks for elevated rights. It runs `docker` as your user, so it can do whatever your user can do with Docker; keep in mind that membership of the `docker` group gives full control of the machine. Actions that remove containers (`Down`) always ask first.
 
 ## Usage
 
