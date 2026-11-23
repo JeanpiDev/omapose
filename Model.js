@@ -2,7 +2,7 @@
 // Everything that comes from docker, files or settings is untrusted: it is
 // bounded and validated here before the UI sees it.
 
-var VERSION = "0.1.0"
+var VERSION = "0.1.1"
 var PLUGIN_ID = "io.github.jeanpidev.omapose"
 var HOMEPAGE = "https://github.com/JeanpiDev/omapose"
 
