@@ -120,6 +120,32 @@ function guardedArgs(engine, argv) {
   return ["sh", "-c", GUARD_SCRIPT, "omapose-guard", engine.host, engine.id].concat(pinned)
 }
 
+// Every published project carries the ID of the engine it was read from.
+function stampEngine(projects, engine) {
+  var id = engine && engine.id ? str(engine.id) : ""
+  var out = []
+  for (var i = 0; i < projects.length; i++) {
+    var p = {}
+    for (var k in projects[i]) p[k] = projects[i][k]
+    p.engineId = id
+    out.push(p)
+  }
+  return out
+}
+
+// Frozen { engine, project } for an action, or null unless the project was
+// read from exactly that engine (never pairs a list with another engine).
+function snapshotFor(projects, name, engine) {
+  if (!isEngine(engine)) return null
+  for (var i = 0; i < projects.length; i++) {
+    var p = projects[i]
+    if (p.name !== name) continue
+    if (p.engineId !== engine.id) return null
+    return { engine: { host: engine.host, id: engine.id }, project: JSON.parse(JSON.stringify(p)) }
+  }
+  return null
+}
+
 // ---- docker ps -----------------------------------------------------------------
 
 function dockerPsArgs() {
@@ -877,6 +903,8 @@ if (typeof module !== "undefined") {
     isEngine: isEngine,
     withHost: withHost,
     guardedArgs: guardedArgs,
+    stampEngine: stampEngine,
+    snapshotFor: snapshotFor,
     shellArgs: shellArgs,
     memoryByContainer: memoryByContainer,
     serviceArgs: serviceArgs,
