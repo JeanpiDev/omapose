@@ -43,6 +43,7 @@ Click the whale in the bar (right click refreshes). The number next to it is how
 | `r` | Restart (project or service) |
 | `s` | Start / stop a service |
 | `x` / Delete | Down a project (asks first) · stop a service |
+| `e` | Open a shell inside the service's container (bash, or sh when bash is missing) |
 | `o` / `y` | Open / copy the first port of a service |
 | `f` | Forget a remembered project with no containers (also `quickshell ipc -p /usr/share/omarchy/shell call io.github.jeanpidev.omapose forget <name>`) |
 | `,` | Settings and About |
@@ -51,7 +52,7 @@ Click the whale in the bar (right click refreshes). The number next to it is how
 
 Service actions act on the container, so they also work for services behind compose `profiles:` and for containers whose service was removed from the file. Bringing a project down includes every profile and removes those orphan containers.
 
-The header shows how many containers are running, Docker's CPU as a share of the whole machine, and its RAM (used, % and total), sampled with `docker stats` every 10 s while the panel is open.
+Each running service shows its own RAM next to its state. The header shows how many containers are running, Docker's CPU as a share of the whole machine, and its RAM (used, % and total), sampled with `docker stats` every 10 s while the panel is open.
 
 Ports show whether they answer: `HTTP 200`, `HTTP 404 · API`, `HTTP 401 · auth`, `TCP only` (databases), `No response`. Only HTTP ports open in the browser.
 
