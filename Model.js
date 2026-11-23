@@ -437,6 +437,7 @@ function buildRows(projects, options) {
   var expanded = opts.expanded || {}
   var busy = opts.busy || {}
   var probes = opts.probes || {}
+  var memory = opts.memory || {}
   var rows = []
   for (var i = 0; i < projects.length; i++) {
     var p = projects[i]
@@ -487,6 +488,7 @@ function buildRows(projects, options) {
         health: sv.health,
         detail: sv.status,
         containerId: sv.containerId,
+        mem: sv.state === "running" && memory[sv.containerId] !== undefined ? memory[sv.containerId] : -1,
         portsJson: JSON.stringify(ports),
         busy: str(sBusy.status),
         message: str(sBusy.message, MAX_MESSAGE)
@@ -500,7 +502,7 @@ function buildRows(projects, options) {
 function rowFor(fields) {
   var row = {
     key: "", kind: "", project: "", service: "", title: "", state: "", health: "",
-    detail: "", containerId: "", portsJson: "[]", running: 0, total: 0,
+    detail: "", containerId: "", portsJson: "[]", running: 0, total: 0, mem: -1,
     expanded: false, remembered: false, missing: false, busy: "", message: "", sig: ""
   }
   for (var k in fields) if (row.hasOwnProperty(k)) row[k] = fields[k]
@@ -671,6 +673,30 @@ function terminalLogsArgs(containerId, host) {
   return ["xdg-terminal-exec", "docker", "-H", host, "logs", "-f", "--tail", "200", containerId]
 }
 
+// Interactive shell in a running container, in the user's terminal.
+// - Pinned to the shown engine and guarded like every other action.
+// - bash when the image has it, sh otherwise.
+// - docker does not signal an exec'd process when its client goes away, so
+//   closing the terminal window would leave the shell running inside the
+//   container. The session is tagged with a one-off env var and, when the
+//   window closes (HUP) or the shell exits, every process carrying that tag
+//   is stopped. Fixed script; host, engine ID and container ID are argv.
+var SHELL_SCRIPT = [
+  "h=$1; want=$2; c=$3",
+  "got=$(docker -H \"$h\" info --format '{{.ID}}' 2>/dev/null) || { echo 'Docker engine is not reachable'; sleep 3; exit 3; }",
+  "[ \"$got\" = \"$want\" ] || { echo 'Docker engine changed since the list was shown; refresh and try again'; sleep 3; exit 3; }",
+  "tok=\"omapose-$$-$(date +%s)\"",
+  "cleanup() { docker -H \"$h\" exec \"$c\" sh -c 'for p in /proc/[0-9]*; do tr \"\\000\" \"\\n\" < \"$p/environ\" 2>/dev/null | grep -qx \"OMAPOSE_SESSION=$1\" && kill -HUP \"${p#/proc/}\" 2>/dev/null; done; exit 0' omapose-cleanup \"$tok\" >/dev/null 2>&1; }",
+  "trap 'cleanup; exit 0' HUP INT TERM",
+  "docker -H \"$h\" exec -it -e \"OMAPOSE_SESSION=$tok\" \"$c\" sh -c 'if command -v bash >/dev/null 2>&1; then exec bash; else exec sh; fi'",
+  "cleanup"
+].join("\n")
+
+function shellArgs(engine, containerId) {
+  if (!isContainerId(containerId) || !isEngine(engine)) return null
+  return ["xdg-terminal-exec", "sh", "-c", SHELL_SCRIPT, "omapose-shell", engine.host, engine.id, containerId]
+}
+
 function cleanMessage(stderr) {
   var lines = str(stderr, 8192).split("\n")
   var kept = []
@@ -761,6 +787,20 @@ function usageTotal(projects, stats, cores) {
   }
 }
 
+// { fullContainerId: bytes } for running containers (stats ids are short).
+function memoryByContainer(projects, stats) {
+  var out = {}
+  var ids = runningContainerIds(projects)
+  var byId = stats && stats.byId ? stats.byId : {}
+  var keys = Object.keys(byId)
+  for (var i = 0; i < ids.length; i++) {
+    for (var k = 0; k < keys.length; k++) {
+      if (ids[i].indexOf(keys[k]) === 0 || keys[k].indexOf(ids[i]) === 0) { out[ids[i]] = byId[keys[k]].mem; break }
+    }
+  }
+  return out
+}
+
 // bytes -> { value, unit, decimals } in binary units (MiB / GiB, like docker).
 function bytesParts(bytes) {
   if (!(bytes >= 0)) return null
@@ -837,6 +877,8 @@ if (typeof module !== "undefined") {
     isEngine: isEngine,
     withHost: withHost,
     guardedArgs: guardedArgs,
+    shellArgs: shellArgs,
+    memoryByContainer: memoryByContainer,
     serviceArgs: serviceArgs,
     findService: findService,
     logsArgs: logsArgs,
