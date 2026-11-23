@@ -51,6 +51,9 @@ Item {
   // listing made with it arrives, so actions always target what is shown.
   property var engine: null
   property var listingEngine: null
+  // Engine of baseProjects; set in the same step as baseProjects and only
+  // published (with the projects) in finalize().
+  property var baseEngine: null
   property string currentHost: ""
   property bool loaded: false
   property bool pendingRefresh: false
@@ -70,7 +73,7 @@ Item {
   // engine ID -> docker ps pinned to that endpoint.
   function refresh() {
     if (!rememberedLoaded) return
-    if (hostProc.running || idProc.running || psProc.running) {
+    if (hostProc.running || idProc.running || psProc.running || existProc.running) {
       pendingRefresh = true
       return
     }
@@ -113,8 +116,8 @@ Item {
   }
 
   function failListing(kind) {
-    root.engine = null
     root.errorKind = kind
+    root.baseEngine = null
     root.baseProjects = []
     root.existing = ({})
     finalize()
@@ -150,8 +153,8 @@ Item {
     var text = String(out || "")
     var hasRows = /\S/.test(text)
     var kind = hasRows ? "" : Model.classifyError(err)
-    root.engine = kind ? null : root.listingEngine
     root.errorKind = kind
+    root.baseEngine = kind ? null : root.listingEngine
     root.baseProjects = kind ? [] : Model.groupProjects(Model.parseContainers(text))
     if (!kind) {
       var seen = Model.rememberSeen(root.remembered, root.baseProjects, new Date().toISOString())
@@ -170,8 +173,12 @@ Item {
     }
   }
 
+  // The only place where the visible engine and projects change, together.
   function finalize() {
-    root.projects = root.errorKind ? [] : Model.mergeRemembered(root.baseProjects, root.remembered, root.existing)
+    var engine = root.errorKind ? null : root.baseEngine
+    var list = root.errorKind ? [] : Model.mergeRemembered(root.baseProjects, root.remembered, root.existing)
+    root.projects = Model.stampEngine(list, engine)
+    root.engine = engine
     root.loaded = true
     syncRows()
     // A port that appeared since the last probe gets its label right away.
@@ -263,12 +270,7 @@ Item {
 
   // Frozen copy of what is shown, for actions that need a confirmation.
   function snapshot(projectName) {
-    var p = findProject(projectName)
-    if (!p || !root.engine) return null
-    return {
-      engine: { host: root.engine.host, id: root.engine.id },
-      project: JSON.parse(JSON.stringify(p))
-    }
+    return Model.snapshotFor(root.projects, projectName, root.engine)
   }
 
   function findProject(name) {
@@ -484,8 +486,9 @@ Item {
   // requested (e.g. when the Down confirmation opened); it is used as-is, so
   // a later refresh or context switch cannot change the target.
   function runAction(projectName, verb, service, snapshot) {
-    var target = snapshot && snapshot.engine ? snapshot.engine : root.engine
-    var project = snapshot && snapshot.project ? snapshot.project : findProject(projectName)
+    var shot = snapshot && snapshot.engine && snapshot.project ? snapshot : root.snapshot(projectName)
+    var target = shot ? shot.engine : null
+    var project = shot ? shot.project : null
     var raw = null
     if (service) {
       var svc = Model.findService(project ? [project] : [], projectName, service)

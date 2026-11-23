@@ -375,3 +375,19 @@ test("RAM per service: mapped to full container ids, only for running services",
   const before = M.buildRows(projects, { showStopped: true, expanded: { shop: true } })
   assert.notEqual(before[1].sig, rows[1].sig)
 })
+
+test("snapshots never pair a project with an engine it was not read from", () => {
+  const A = { host: "unix:///var/run/docker.sock", id: "engine-a" }
+  const B = { host: "ssh://other", id: "engine-b" }
+  const shown = M.stampEngine(M.groupProjects(M.parseContainers(line({}))), A)
+  assert.equal(shown[0].engineId, "engine-a")
+  const ok = M.snapshotFor(shown, "shop", A)
+  assert.deepEqual(ok.engine, A)
+  assert.equal(ok.project.name, "shop")
+  ok.project.name = "mutated"
+  assert.equal(shown[0].name, "shop")
+  assert.equal(M.snapshotFor(shown, "shop", B), null)
+  assert.equal(M.snapshotFor(shown, "missing", A), null)
+  assert.equal(M.snapshotFor(M.stampEngine(shown, null), "shop", A), null)
+  assert.equal(M.snapshotFor(shown, "shop", null), null)
+})
