@@ -175,6 +175,7 @@ test("buildRows signature changes only when content changes", () => {
 
 test("classifyError recognises daemon and permission problems", () => {
   assert.equal(M.classifyError("Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?"), "daemon")
+  assert.equal(M.classifyError("failed to connect to the docker API at unix:///x.sock; check if the path is correct and if the daemon is running"), "daemon")
   assert.equal(M.classifyError("permission denied while trying to connect"), "permission")
   assert.equal(M.classifyError("boom"), "generic")
   assert.equal(M.classifyError(""), "")
@@ -250,8 +251,9 @@ test("service actions act on the container (works for profiles and orphans)", ()
 test("logs argv are bounded and validated", () => {
   assert.deepEqual(M.logsArgs("a".repeat(64), 5), ["docker", "logs", "--tail", "10", "-f", "a".repeat(64)])
   assert.equal(M.logsArgs("nope", 100), null)
-  assert.deepEqual(M.terminalLogsArgs("b".repeat(64)), ["xdg-terminal-exec", "docker", "logs", "-f", "--tail", "200", "b".repeat(64)])
-  assert.equal(M.terminalLogsArgs("x y"), null)
+  assert.deepEqual(M.terminalLogsArgs("b".repeat(64), "unix:///var/run/docker.sock"), ["xdg-terminal-exec", "docker", "-H", "unix:///var/run/docker.sock", "logs", "-f", "--tail", "200", "b".repeat(64)])
+  assert.equal(M.terminalLogsArgs("b".repeat(64), "bad host"), null)
+  assert.equal(M.terminalLogsArgs("x y", "unix:///var/run/docker.sock"), null)
 })
 
 test("cleanMessage keeps the last meaningful stderr lines, bounded", () => {
@@ -307,4 +309,35 @@ test("usage: docker stats memory and CPU summed for running containers", () => {
   assert.deepEqual(M.bytesParts(375 * 1048576), { value: 375, unit: "MiB", decimals: 0 })
   assert.deepEqual(M.bytesParts(1610612736), { value: 1.5, unit: "GiB", decimals: 1 })
   assert.equal(M.bytesParts(-1), null)
+})
+
+test("engine pinning: endpoint and engine ID parsed and validated", () => {
+  assert.equal(M.parseHost('"unix:///var/run/docker.sock"'), "unix:///var/run/docker.sock")
+  assert.equal(M.parseHost('"ssh://me@box"'), "ssh://me@box")
+  assert.equal(M.parseHost('"tcp://1.2.3.4:2376"'), "tcp://1.2.3.4:2376")
+  assert.equal(M.parseHost('"unix:///x; rm -rf ~"'), "")
+  assert.equal(M.parseHost('"$(boom)"'), "")
+  assert.equal(M.parseHost("not json"), "")
+  assert.equal(M.parseEngineId('"82fa4597-d3e9-4dd4-a07c-1147c7ed2b66"'), "82fa4597-d3e9-4dd4-a07c-1147c7ed2b66")
+  assert.equal(M.parseEngineId('"ABCD:EFGH:IJKL"'), "ABCD:EFGH:IJKL")
+  assert.equal(M.parseEngineId('"bad id!"'), "")
+  assert.deepEqual(M.engineIdArgs("unix:///var/run/docker.sock"), ["docker", "-H", "unix:///var/run/docker.sock", "info", "--format", "{{json .ID}}"])
+})
+
+test("engine pinning: every action is pinned to the shown engine and re-checked", () => {
+  const engine = { host: "unix:///var/run/docker.sock", id: "82fa4597-d3e9-4dd4-a07c-1147c7ed2b66" }
+  assert.deepEqual(M.withHost(engine.host, ["docker", "ps"]), ["docker", "-H", engine.host, "ps"])
+  assert.equal(M.withHost(engine.host, ["sh", "-c", "x"]), null)
+  const project = { name: "shop", workingDir: "/w/s", configFiles: ["/w/s/compose.yml"] }
+  const argv = M.guardedArgs(engine, M.composeArgs(project, "down"))
+  assert.equal(argv[0], "sh")
+  assert.equal(argv[3], "omapose-guard")
+  assert.equal(argv[4], engine.host)
+  assert.equal(argv[5], engine.id)
+  assert.deepEqual(argv.slice(6, 10), ["docker", "-H", engine.host, "compose"])
+  assert.ok(!argv[2].includes(engine.host) && !argv[2].includes(engine.id))
+  assert.ok(argv[2].includes('[ "$got" = "$want" ]'))
+  assert.equal(M.guardedArgs(null, ["docker", "ps"]), null)
+  assert.equal(M.guardedArgs({ host: "unix:///x", id: "bad id" }, ["docker", "ps"]), null)
+  assert.equal(M.guardedArgs({ host: "bad", id: "abc" }, ["docker", "ps"]), null)
 })

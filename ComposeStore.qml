@@ -47,6 +47,11 @@ Item {
   property var expanded: ({})
   property string query: ""
   property string errorKind: ""
+  // Engine (endpoint + ID) the visible list was read from. Only updated when a
+  // listing made with it arrives, so actions always target what is shown.
+  property var engine: null
+  property var listingEngine: null
+  property string currentHost: ""
   property bool loaded: false
   property bool pendingRefresh: false
   readonly property int runningCount: Model.runningServices(projects)
@@ -61,21 +66,91 @@ Item {
   ListModel { id: rowsModel }
 
   // ---- reading docker --------------------------------------------------------
+  // refresh: resolve the current context's endpoint -> (if it changed) the
+  // engine ID -> docker ps pinned to that endpoint.
   function refresh() {
     if (!rememberedLoaded) return
-    if (psProc.running) {
+    if (hostProc.running || idProc.running || psProc.running) {
       pendingRefresh = true
       return
     }
+    hostProc.running = true
+  }
+
+  function hostResolved(out) {
+    var host = Model.parseHost(out)
+    if (!host) {
+      failListing("generic")
+      return
+    }
+    if (host !== root.currentHost) {
+      root.currentHost = host
+      restartEvents()
+    }
+    if (root.engine && root.engine.host === host) {
+      runPs(root.engine)
+      return
+    }
+    idProc.streams = 0
+    idProc.command = Model.engineIdArgs(host)
+    idProc.running = true
+  }
+
+  function idResolved(out, err) {
+    var id = Model.parseEngineId(out)
+    if (!id) {
+      failListing(Model.classifyError(err) || "generic")
+      return
+    }
+    runPs({ host: root.currentHost, id: id })
+  }
+
+  function runPs(engine) {
+    root.listingEngine = engine
     psProc.streams = 0
-    psProc.command = Model.capped(Model.dockerPsArgs())
+    psProc.command = Model.capped(Model.withHost(engine.host, Model.dockerPsArgs()))
     psProc.running = true
+  }
+
+  function failListing(kind) {
+    root.engine = null
+    root.errorKind = kind
+    root.baseProjects = []
+    root.existing = ({})
+    finalize()
+  }
+
+  Process {
+    id: hostProc
+    command: Model.engineHostArgs()
+    running: false
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.hostResolved(text)
+    }
+  }
+
+  Process {
+    id: idProc
+    property int streams: 0
+    running: false
+    stdout: StdioCollector {
+      id: idOut
+      waitForEnd: true
+      onStreamFinished: if (++idProc.streams === 2) root.idResolved(idOut.text, idErr.text)
+    }
+    stderr: StdioCollector {
+      id: idErr
+      waitForEnd: true
+      onStreamFinished: if (++idProc.streams === 2) root.idResolved(idOut.text, idErr.text)
+    }
   }
 
   function handlePs(out, err) {
     var text = String(out || "")
     var hasRows = /\S/.test(text)
     var kind = hasRows ? "" : Model.classifyError(err)
+    root.engine = kind ? null : root.listingEngine
     root.errorKind = kind
     root.baseProjects = kind ? [] : Model.groupProjects(Model.parseContainers(text))
     if (!kind) {
@@ -185,6 +260,16 @@ Item {
     syncRows()
   }
 
+  // Frozen copy of what is shown, for actions that need a confirmation.
+  function snapshot(projectName) {
+    var p = findProject(projectName)
+    if (!p || !root.engine) return null
+    return {
+      engine: { host: root.engine.host, id: root.engine.id },
+      project: JSON.parse(JSON.stringify(p))
+    }
+  }
+
   function findProject(name) {
     for (var i = 0; i < root.projects.length; i++) if (root.projects[i].name === name) return root.projects[i]
     return null
@@ -197,7 +282,7 @@ Item {
   Process {
     id: eventsProc
     running: false
-    command: Model.eventsArgs()
+    command: root.currentHost ? Model.withHost(root.currentHost, Model.eventsArgs()) : Model.eventsArgs()
     stdout: SplitParser {
       onRead: function(data) {
         root.eventsBackoffMs = 2000
@@ -210,6 +295,13 @@ Item {
       root.eventsBackoffMs = Math.min(60000, root.eventsBackoffMs * 2)
       eventsRestart.restart()
     }
+  }
+
+  // The events stream follows the endpoint of the current context.
+  function restartEvents() {
+    if (!root.alive || !root.rememberedLoaded) return
+    if (eventsProc.running) eventsProc.running = false
+    else eventsRestart.restart()
   }
 
   Timer {
@@ -266,7 +358,7 @@ Item {
 
   function runStats() {
     if (statsProc.running) return
-    var argv = Model.statsArgs(Model.runningContainerIds(root.projects))
+    var argv = root.engine ? Model.withHost(root.engine.host, Model.statsArgs(Model.runningContainerIds(root.projects))) : null
     if (!argv) { root.usage = null; return }
     statsProc.command = Model.capped(argv)
     statsProc.running = true
@@ -379,16 +471,28 @@ Item {
     syncRows()
   }
 
-  function runAction(projectName, verb, service) {
-    var argv = null
+  // `engine` is the snapshot taken when the action was requested (e.g. when
+  // the Down confirmation opened); the guard re-checks it before running.
+  // `snapshot` ({ engine, project }) is what was on screen when the action was
+  // requested (e.g. when the Down confirmation opened); it is used as-is, so
+  // a later refresh or context switch cannot change the target.
+  function runAction(projectName, verb, service, snapshot) {
+    var target = snapshot && snapshot.engine ? snapshot.engine : root.engine
+    var project = snapshot && snapshot.project ? snapshot.project : findProject(projectName)
+    var raw = null
     if (service) {
-      var svc = Model.findService(root.projects, projectName, service)
-      argv = svc ? Model.serviceArgs(svc.containerId, verb) : null
+      var svc = Model.findService(project ? [project] : [], projectName, service)
+      raw = svc ? Model.serviceArgs(svc.containerId, verb) : null
     } else {
-      argv = Model.composeArgs(findProject(projectName), verb)
+      raw = Model.composeArgs(project, verb)
     }
+    var argv = raw ? Model.guardedArgs(target, raw) : null
     var key = busyKey(projectName, service)
-    if (!argv || isBusy(key)) return false
+    if (isBusy(key)) return false
+    if (!argv) {
+      setBusy(key, { status: "error", message: "Docker engine or project is no longer available; refresh and try again", until: Date.now() + 8000 })
+      return false
+    }
     setBusy(key, { status: "running", message: "", until: 0 })
     var proc = actionComponent.createObject(root, { key: key, argv: argv })
     proc.running = true
@@ -460,7 +564,7 @@ Item {
 
   function openTerminalLogs(projectName, service) {
     var svc = Model.findService(root.projects, projectName, service)
-    var argv = svc ? Model.terminalLogsArgs(svc.containerId) : null
+    var argv = svc && root.engine ? Model.terminalLogsArgs(svc.containerId, root.engine.host) : null
     if (argv) Quickshell.execDetached(argv)
   }
 
@@ -469,7 +573,8 @@ Item {
       projects: root.projects.length,
       running: root.runningCount,
       error: root.errorKind,
-      events: eventsProc.running
+      events: eventsProc.running,
+      engine: root.engine ? root.engine.host : ""
     })
   }
 
@@ -480,6 +585,8 @@ Item {
     eventsRestart.stop()
     eventsProc.running = false
     psProc.running = false
+    hostProc.running = false
+    idProc.running = false
     probeProc.running = false
     existProc.running = false
     statsProc.running = false
