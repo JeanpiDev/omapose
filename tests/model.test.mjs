@@ -341,3 +341,37 @@ test("engine pinning: every action is pinned to the shown engine and re-checked"
   assert.equal(M.guardedArgs({ host: "unix:///x", id: "bad id" }, ["docker", "ps"]), null)
   assert.equal(M.guardedArgs({ host: "bad", id: "abc" }, ["docker", "ps"]), null)
 })
+
+test("shell: interactive exec in the user's terminal, pinned, guarded and cleaned up", () => {
+  const engine = { host: "unix:///var/run/docker.sock", id: "82fa4597-d3e9-4dd4-a07c-1147c7ed2b66" }
+  const id = "a".repeat(64)
+  const argv = M.shellArgs(engine, id)
+  assert.deepEqual(argv.slice(0, 3), ["xdg-terminal-exec", "sh", "-c"])
+  assert.deepEqual(argv.slice(4), ["omapose-shell", engine.host, engine.id, id])
+  const script = argv[3]
+  assert.ok(!script.includes(id) && !script.includes(engine.host) && !script.includes(engine.id))
+  assert.ok(script.includes('[ "$got" = "$want" ]'))
+  assert.ok(script.includes("OMAPOSE_SESSION") && script.includes("trap 'cleanup; exit 0' HUP INT TERM"))
+  assert.ok(script.includes("exec bash") && script.includes("exec sh"))
+  assert.equal(M.shellArgs(engine, "nope; rm -rf ~"), null)
+  assert.equal(M.shellArgs(null, id), null)
+})
+
+test("RAM per service: mapped to full container ids, only for running services", () => {
+  const a = "a".repeat(64), b = "b".repeat(64), c = "c".repeat(64)
+  const projects = M.groupProjects(M.parseContainers([
+    line({ service: "api", id: a }),
+    line({ service: "db", id: b }),
+    line({ service: "old", id: c, state: "exited", status: "Exited (1)" })
+  ].join("\n")))
+  const stats = M.parseStats("aaaaaaaaaaaa\t100MiB / 16GiB\t1%\nbbbbbbbbbbbb\t2GiB / 16GiB\t1%\ncccccccccccc\t5MiB / 16GiB\t0%\n")
+  const memory = M.memoryByContainer(projects, stats)
+  assert.deepEqual(memory, { [a]: 100 * 1048576, [b]: 2 * 1073741824 })
+  const rows = M.buildRows(projects, { showStopped: true, expanded: { shop: true }, memory })
+  const byKey = Object.fromEntries(rows.map(r => [r.key, r]))
+  assert.equal(byKey["s:shop/api"].mem, 100 * 1048576)
+  assert.equal(byKey["s:shop/old"].mem, -1)
+  assert.equal(byKey["p:shop"].mem, -1)
+  const before = M.buildRows(projects, { showStopped: true, expanded: { shop: true } })
+  assert.notEqual(before[1].sig, rows[1].sig)
+})

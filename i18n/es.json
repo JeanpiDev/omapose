@@ -67,7 +67,7 @@
   "hint.expand": "desplegar",
   "hint.search": "buscar",
   "hint.list": "lista",
-  "hint.actions": "u levantar · r reiniciar · s iniciar/detener · x bajar/detener",
+  "hint.actions": "u levantar · r reiniciar · s iniciar/detener · x bajar/detener · e shell",
   "hint.logs": "logs",
   "hint.close": "cerrar",
   "settings.language": "Idioma",
@@ -80,5 +80,7 @@
   "stats.cpu": "CPU de Docker",
   "stats.ram": "RAM de Docker",
   "stats.cpuValue": "%1 del sistema",
-  "stats.ramValue": "%1 (%2 de %3)"
+  "stats.ramValue": "%1 (%2 de %3)",
+  "action.shell": "Abrir shell",
+  "status.shellUnavailable": "La shell necesita un contenedor en marcha"
 }

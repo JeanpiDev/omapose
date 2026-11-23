@@ -1,6 +1,8 @@
 import QtQuick
 import qs.Commons
 import qs.Ui
+import qs.Commons as Commons
+import "../Model.js" as Model
 
 CursorSurface {
   id: root
@@ -12,6 +14,7 @@ CursorSurface {
 
   signal actionRequested(string verb)
   signal logsRequested()
+  signal shellRequested()
   signal portActivated(var port)
   signal hoveredRow()
 
@@ -99,8 +102,9 @@ CursorSurface {
         if (!root.row) return ""
         if (root.busy) return root.t("action.busy")
         if (root.row.state !== "running") return root.t("service." + root.row.state, root.row.state)
-        if (root.row.health) return root.t("health." + root.row.health, root.row.health)
-        return root.t("state.running")
+        var label = root.row.health ? root.t("health." + root.row.health, root.row.health) : root.t("state.running")
+        var mem = Model.bytesParts(root.row.mem)
+        return mem ? label + " · " + Commons.I18n.formatNumber(mem.value, mem.decimals) + " " + mem.unit : label
       }
       color: root.busy ? Color.accent : root.stateColor
       font.family: root.fontFamily
@@ -156,6 +160,15 @@ CursorSurface {
       hoverColor: Color.urgent
       fontFamily: root.fontFamily
       onClicked: root.actionRequested("stop")
+    }
+    PanelActionButton {
+      visible: !!root.row && root.row.state === "running"
+      iconText: ""
+      tooltipText: root.t("action.shell")
+      foreground: root.fg
+      hoverColor: Color.accent
+      fontFamily: root.fontFamily
+      onClicked: root.shellRequested()
     }
     PanelActionButton {
       iconText: ""

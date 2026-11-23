@@ -174,6 +174,11 @@ Panel {
     })
   }
 
+  function openShell(row) {
+    if (!row || row.kind !== "service" || !root.store) return
+    if (!root.store.openShell(row.project, row.service)) root.flash(root.t("status.shellUnavailable"))
+  }
+
   function portsOf(row) {
     if (!row || row.kind !== "service") return []
     try { return JSON.parse(row.portsJson) } catch (e) { return [] }
@@ -250,6 +255,7 @@ Panel {
       else if (key === "r") root.serviceAction(row, "restart")
       else if (key === "o") root.openFirstHttp(row)
       else if (key === "y") root.copyPort(row)
+      else if (key === "e") root.openShell(row)
     }
   }
 
@@ -547,6 +553,7 @@ Panel {
                 onHoveredRow: root.hoverSelect(rowItem.index)
                 onActionRequested: function(verb) { root.serviceAction(rowItem.model, verb) }
                 onLogsRequested: root.openLogs(rowItem.model)
+                onShellRequested: root.openShell(rowItem.model)
                 onPortActivated: function(port) { root.activatePort(port) }
               }
             }

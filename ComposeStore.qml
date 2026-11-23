@@ -222,6 +222,7 @@ Item {
       expanded: root.expanded,
       busy: root.busy,
       probes: root.probes,
+      memory: root.memory,
       showStopped: root.showStopped
     })
     for (var i = 0; i < next.length; i++) {
@@ -334,6 +335,7 @@ Item {
   // `docker stats --no-stream` samples for ~1-2 s, so it runs in the
   // background every 10 s and never blocks the list.
   property var usage: null
+  property var memory: ({})
   property int cores: 1
 
   Process {
@@ -354,7 +356,7 @@ Item {
     onTriggered: root.runStats()
   }
 
-  onRunningCountChanged: if (runningCount === 0) usage = null
+  onRunningCountChanged: if (runningCount === 0) { usage = null; memory = ({}) }
 
   function runStats() {
     if (statsProc.running) return
@@ -369,7 +371,12 @@ Item {
     running: false
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: root.usage = Model.usageTotal(root.projects, Model.parseStats(text), root.cores)
+      onStreamFinished: {
+        var stats = Model.parseStats(text)
+        root.usage = Model.usageTotal(root.projects, stats, root.cores)
+        root.memory = Model.memoryByContainer(root.projects, stats)
+        root.syncRows()
+      }
     }
   }
 
@@ -560,6 +567,13 @@ Item {
 
   function openUrl(url) {
     if (/^https?:\/\//.test(String(url))) Quickshell.execDetached(["xdg-open", String(url)])
+  }
+
+  function openShell(projectName, service) {
+    var svc = Model.findService(root.projects, projectName, service)
+    var argv = svc && svc.state === "running" ? Model.shellArgs(root.engine, svc.containerId) : null
+    if (argv) Quickshell.execDetached(argv)
+    return !!argv
   }
 
   function openTerminalLogs(projectName, service) {

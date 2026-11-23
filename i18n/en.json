@@ -67,7 +67,7 @@
   "hint.expand": "expand",
   "hint.search": "search",
   "hint.list": "list",
-  "hint.actions": "u up · r restart · s start/stop · x down/stop",
+  "hint.actions": "u up · r restart · s start/stop · x down/stop · e shell",
   "hint.logs": "logs",
   "hint.close": "close",
   "settings.language": "Language",
@@ -80,5 +80,7 @@
   "stats.cpu": "Docker CPU",
   "stats.ram": "Docker RAM",
   "stats.cpuValue": "%1 of system",
-  "stats.ramValue": "%1 (%2 of %3)"
+  "stats.ramValue": "%1 (%2 of %3)",
+  "action.shell": "Open shell",
+  "status.shellUnavailable": "Shell needs a running container"
 }
