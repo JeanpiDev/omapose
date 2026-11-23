@@ -66,6 +66,60 @@ function capped(argv) {
   return ["sh", "-c", "\"$@\" | head -c " + MAX_OUTPUT_BYTES, "omapose"].concat(argv)
 }
 
+// ---- engine pinning ------------------------------------------------------------
+// Every docker command runs against one explicit endpoint (`-H`), resolved
+// from the current context when the list is read. Actions also carry the
+// engine ID that was shown and re-check it right before running, so a
+// context switch can never redirect a confirmed action to another engine.
+
+function engineHostArgs() {
+  return ["docker", "context", "inspect", "--format", "{{json .Endpoints.docker.Host}}"]
+}
+
+function parseHost(raw) {
+  var v = ""
+  try { v = JSON.parse(trim(str(raw, 1024))) } catch (e) { return "" }
+  v = str(v, 512)
+  return /^(unix|tcp|ssh|npipe):\/\/[^\s"'`$\\]+$/.test(v) ? v : ""
+}
+
+function engineIdArgs(host) {
+  return host ? ["docker", "-H", host, "info", "--format", "{{json .ID}}"] : null
+}
+
+function parseEngineId(raw) {
+  var v = ""
+  try { v = JSON.parse(trim(str(raw, 512))) } catch (e) { return "" }
+  v = str(v, 128)
+  return /^[A-Za-z0-9:_-]{1,128}$/.test(v) ? v : ""
+}
+
+function isEngine(engine) {
+  return !!engine && parseHost(JSON.stringify(engine.host)) === engine.host && /^[A-Za-z0-9:_-]{1,128}$/.test(str(engine.id))
+}
+
+// ["docker", ...] -> ["docker", "-H", host, ...]
+function withHost(host, argv) {
+  if (!argv || argv[0] !== "docker" || !host) return null
+  return ["docker", "-H", host].concat(argv.slice(1))
+}
+
+var GUARD_SCRIPT = [
+  "h=$1; want=$2; shift 2",
+  "got=$(docker -H \"$h\" info --format '{{.ID}}' 2>/dev/null) || { echo 'Docker engine is not reachable' >&2; exit 3; }",
+  "[ \"$got\" = \"$want\" ] || { echo 'Docker engine changed since the list was shown; refresh and try again' >&2; exit 3; }",
+  "exec \"$@\""
+].join("\n")
+
+// Runs a docker argv pinned to `engine`, only if that endpoint still serves
+// the same engine ID. Host, ID and argv travel as positional arguments.
+function guardedArgs(engine, argv) {
+  if (!isEngine(engine)) return null
+  var pinned = withHost(engine.host, argv)
+  if (!pinned) return null
+  return ["sh", "-c", GUARD_SCRIPT, "omapose-guard", engine.host, engine.id].concat(pinned)
+}
+
 // ---- docker ps -----------------------------------------------------------------
 
 function dockerPsArgs() {
@@ -468,7 +522,8 @@ function classifyError(stderr) {
   var s = str(stderr, 4096).toLowerCase()
   if (!s) return ""
   if (s.indexOf("permission denied") >= 0) return "permission"
-  if (s.indexOf("cannot connect to the docker daemon") >= 0 || s.indexOf("is the docker daemon running") >= 0) return "daemon"
+  if (s.indexOf("cannot connect to the docker daemon") >= 0 || s.indexOf("is the docker daemon running") >= 0
+      || s.indexOf("failed to connect to the docker api") >= 0) return "daemon"
   return "generic"
 }
 
@@ -611,9 +666,9 @@ function logsArgs(containerId, lines) {
   return ["docker", "logs", "--tail", String(n), "-f", containerId]
 }
 
-function terminalLogsArgs(containerId) {
-  if (!isContainerId(containerId)) return null
-  return ["xdg-terminal-exec", "docker", "logs", "-f", "--tail", "200", containerId]
+function terminalLogsArgs(containerId, host) {
+  if (!isContainerId(containerId) || !parseHost(JSON.stringify(host))) return null
+  return ["xdg-terminal-exec", "docker", "-H", host, "logs", "-f", "--tail", "200", containerId]
 }
 
 function cleanMessage(stderr) {
@@ -775,6 +830,13 @@ if (typeof module !== "undefined") {
     probeLabel: probeLabel,
     probeTone: probeTone,
     composeArgs: composeArgs,
+    engineHostArgs: engineHostArgs,
+    parseHost: parseHost,
+    engineIdArgs: engineIdArgs,
+    parseEngineId: parseEngineId,
+    isEngine: isEngine,
+    withHost: withHost,
+    guardedArgs: guardedArgs,
     serviceArgs: serviceArgs,
     findService: findService,
     logsArgs: logsArgs,

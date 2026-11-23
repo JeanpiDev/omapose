@@ -29,7 +29,7 @@ Item {
     proc.running = false
     lines.clear()
     root.follow = true
-    var argv = root.target ? Model.logsArgs(root.target.containerId, root.maxLines) : null
+    var argv = root.target ? Model.withHost(root.target.host, Model.logsArgs(root.target.containerId, root.maxLines)) : null
     if (!argv) return
     proc.command = argv
     proc.running = true

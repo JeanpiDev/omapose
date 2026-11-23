@@ -22,8 +22,10 @@ Panel {
   property int selectedIndex: -1
   property bool listFocus: false
   property string statusText: ""
-  property string pendingDown: ""
-  readonly property bool confirmOpen: pendingDown !== ""
+  // Down asks first; the request keeps the engine the list was read from, so
+  // confirming can only act on what was shown.
+  property var pendingDown: null
+  readonly property bool confirmOpen: pendingDown !== null
 
   readonly property color fg: Color.popups.text
   readonly property color dim: Qt.rgba(fg.r, fg.g, fg.b, 0.6)
@@ -41,7 +43,7 @@ Panel {
   // ---- lifecycle -------------------------------------------------------------
   function open() {
     root.view = "list"
-    root.pendingDown = ""
+    root.pendingDown = null
     root.statusText = ""
     root.listFocus = false
     root.selectedIndex = -1
@@ -68,7 +70,7 @@ Panel {
 
   onOpenedChanged: if (!opened) {
     root.view = "list"
-    root.pendingDown = ""
+    root.pendingDown = null
   }
 
   // ---- focus & selection -------------------------------------------------------
@@ -135,31 +137,31 @@ Panel {
   function projectAction(name, verb) {
     if (!root.store) return
     if (verb === "down") {
-      root.pendingDown = name
+      root.pendingDown = { name: name, snapshot: root.store.snapshot(name) }
       return
     }
-    root.store.runAction(name, verb, null)
+    root.store.runAction(name, verb, null, root.store.snapshot(name))
   }
 
   function serviceAction(row, verb) {
-    if (root.store && row) root.store.runAction(row.project, verb, row.service)
+    if (root.store && row) root.store.runAction(row.project, verb, row.service, root.store.snapshot(row.project))
   }
 
   function confirmDown() {
-    var name = root.pendingDown
-    root.pendingDown = ""
-    if (name && root.store) root.store.runAction(name, "down", null)
+    var request = root.pendingDown
+    root.pendingDown = null
+    if (request && root.store) root.store.runAction(request.name, "down", null, request.snapshot)
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
   }
 
   function cancelDown() {
-    root.pendingDown = ""
+    root.pendingDown = null
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
   }
 
   function openLogs(row) {
     if (!row || row.kind !== "service" || !row.containerId) return
-    root.logTarget = { project: row.project, service: row.service, containerId: row.containerId }
+    root.logTarget = { project: row.project, service: row.service, containerId: row.containerId, host: root.store.engine ? root.store.engine.host : "" }
     root.view = "logs"
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
   }
@@ -645,7 +647,7 @@ Panel {
         z: 10
         opened: root.confirmOpen
         focus: root.confirmOpen
-        message: root.t("confirm.down").arg(root.pendingDown)
+        message: root.t("confirm.down").arg(root.pendingDown ? root.pendingDown.name : "")
         confirmText: root.t("action.down")
         background: Color.menu.background
         foreground: Color.menu.text

@@ -42,6 +42,8 @@
 
 ## Comandos externos (siempre argv, nunca `sh -c` con valores interpolados)
 
+**Motor fijado:** cada refresco resuelve `docker context inspect --format {{json .Endpoints.docker.Host}}` y, si cambió, `docker -H <endpoint> info --format {{json .ID}}`. Todos los comandos de abajo llevan `docker -H <endpoint>`. Las acciones van envueltas en una guarda (`sh -c '<script fijo>' omapose-guard <endpoint> <engineId> docker -H <endpoint> …`) que aborta si ese endpoint ya no sirve el mismo motor. La confirmación de `Down` guarda una copia del proyecto y del motor mostrados y ejecuta exactamente eso.
+
 | Uso | argv |
 |---|---|
 | Listado | `docker ps -a --no-trunc --filter label=com.docker.compose.project --format <tpl>` con `tpl` = objeto JSON por línea usando `{{json .ID}}`, `{{json (.Label "com.docker.compose.project")}}`, `…service`, `…project.working_dir`, `…project.config_files`, `…oneoff`, `{{json .State}}`, `{{json .Status}}`, `{{json .Ports}}` |

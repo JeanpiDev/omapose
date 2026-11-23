@@ -24,6 +24,8 @@ omarchy plugin add https://github.com/JeanpiDev/omapose.git --enable
 
 All of them ship with Omarchy except Docker itself.
 
+**Engine pinning.** Every Docker command targets the endpoint of the context the list was read from, and actions re-check the engine ID right before running. Switching `docker context` while a confirmation is open cannot redirect it to another engine.
+
 **Privileges.** The plugin never asks for elevated rights. It runs `docker` as your user, so it can do whatever your user can do with Docker; keep in mind that membership of the `docker` group gives full control of the machine. Actions that remove containers (`Down`) always ask first.
 
 ## Usage
