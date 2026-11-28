@@ -16,7 +16,7 @@ Fuentes: https://plugins.omarchy.org/develop.html, `/usr/share/omarchy/shell`, p
 | Procesos con `Process` acotado, nunca interpolar valores en `bash -c` (fuente de datos: ver Fase 0). | Sin dependencias extra; seguro. |
 | Referencia Shibumi validada: `io.github.iammhador.claude-pulse` (solo `bar-widget`, datos dentro del widget, `WidgetButton.onPressed`, `PlainText` en todo). Su color no sigue a Shibumi (usa `barForeground`); ver regla de color. | Click y datos funcionan en la barra Shibumi del usuario. |
 | About en ajustes: tarjeta con nombre · versión, nota de privacidad y enlace al repo (`Qt.openUrlExternally`); `"homepage"` en `manifest.json`. | Patrón de `rimuru.screentime` (`SettingsView.qml`, sección About). |
-| ID `io.github.jeanpidev.omapose`; repo `github.com/JeanpiDev/omapose`. | Third-party no puede usar `omarchy.*`; sin symlinks. |
+| ID `io.github.jeanpidev.omapose`; repo `github.com/Jxanpi/omapose`. | Third-party no puede usar `omarchy.*`; sin symlinks. |
 | Validación: `omarchy plugin validate`, `qmllint -I "$OMARCHY_PATH/shell"`; probar click, Esc, summon/hide, disable/enable, restart, remove en Shibumi y barra nativa. | Checklist de la guía. |
 
 ## Fase 0 (plan): decisiones con alternativas

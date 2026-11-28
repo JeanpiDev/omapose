@@ -16,7 +16,7 @@ description: "Task list for 001-compose-panel"
 ## Phase 1: Setup
 
 - [X] T001 Crear `manifest.json` según contracts/interfaces.md (id, homepage, schema, defaults)
-- [X] T002 [P] Añadir `LICENSE` (MIT, JeanpiDev) y `.gitignore`
+- [X] T002 [P] Añadir `LICENSE` (MIT, Jxanpi) y `.gitignore`
 - [X] T003 [P] Crear `scripts/dev-sync.sh` (rsync del repo a `~/.config/omarchy/plugins/io.github.jeanpidev.omapose`, excluye `.git`/`specs`/`.specify`/`.claude`/`tests`, luego `omarchy restart shell`)
 - [X] T004 [P] Crear `i18n/en.json` e `i18n/es.json` con las claves base (título, estados, acciones, errores, vacío)
 

@@ -7,7 +7,7 @@ Docker Compose projects in the Omarchy bar. See every project and service at a g
 ## Install
 
 ```sh
-omarchy plugin add https://github.com/JeanpiDev/omapose.git --enable
+omarchy plugin add https://github.com/Jxanpi/omapose.git --enable
 ```
 
 ### Requirements
