@@ -4,7 +4,7 @@
 
 var VERSION = "0.1.1"
 var PLUGIN_ID = "io.github.jeanpidev.omapose"
-var HOMEPAGE = "https://github.com/JeanpiDev/omapose"
+var HOMEPAGE = "https://github.com/Jxanpi/omapose"
 
 var MAX_OUTPUT_BYTES = 262144
 var MAX_CONTAINERS = 256
